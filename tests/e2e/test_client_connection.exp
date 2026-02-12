@@ -1,0 +1,32 @@
+#!/usr/bin/expect -f
+log_user 1
+set timeout 5
+
+set GREEN "\033\[0;32m"
+set RED   "\033\[01;31m"
+set NC    "\033\[0m"
+
+# Arrange: Start the server
+spawn ./your_program.sh
+# Act: Attempt to connect to the server using telnet
+spawn telnet localhost 6379
+# Assert: Check if the connection was successful
+expect {
+    -re {Connected to .*} {
+        puts "${GREEN}Test passed: Client connection successful${NC}"
+        exit 0
+    }
+    -re {(Connection refused|Unable to connect)} {
+        puts "${RED}Test failed: Connection refused${NC}"
+        exit 1
+    }
+    timeout {
+        puts "${RED}Test failed: Connection timed out${NC}"
+        exit 1
+    }
+    eof {
+        # If telnet exits before printing "Connected", treat as failure
+        puts "${RED}Test failed: telnet exited unexpectedly${NC}"
+        exit 1
+    }
+}
