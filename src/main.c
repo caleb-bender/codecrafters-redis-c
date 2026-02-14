@@ -1,15 +1,7 @@
 #include "pch.h"
 
 int main() {
-	// Disable output buffering
-	setbuf(stdout, NULL);
-	setbuf(stderr, NULL);
 	
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	printf("Logs from your program will appear here!\n");
-
-	// Uncomment the code below to pass the first stage
-	//
 	int server_fd, client_addr_len;
 	struct sockaddr_in client_addr;
 	

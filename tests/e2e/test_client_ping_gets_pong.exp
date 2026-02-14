@@ -1,0 +1,44 @@
+#!/usr/bin/expect -f
+log_user 1
+set timeout 5
+
+set GREEN "\033\[0;32m"
+set RED   "\033\[01;31m"
+set NC    "\033\[0m"
+
+# Arrange: Start the server
+spawn ./your_program.sh
+# Act: Attempt to connect to the server using telnet and send a PING command
+spawn telnet localhost 6379
+expect {
+    -re {Connected to .*} {
+        # Send the PING command
+        send "PING\r\n"
+        expect {
+            -re {PONG} {
+                puts "${GREEN}Test passed: Received PONG response${NC}"
+                exit 0
+            }
+            timeout {
+                puts "${RED}Test failed: Did not receive PONG response in time${NC}"
+                exit 1
+            }
+            eof {
+                puts "${RED}Test failed: telnet exited unexpectedly${NC}"
+                exit 1
+            }
+        }
+    }
+    -re {(Connection refused|Unable to connect)} {
+        puts "${RED}Test failed: Connection refused${NC}"
+        exit 1
+    }
+    timeout {
+        puts "${RED}Test failed: Connection timed out${NC}"
+        exit 1
+    }
+    eof {
+        puts "${RED}Test failed: telnet exited unexpectedly${NC}"
+        exit 1
+    }
+}
