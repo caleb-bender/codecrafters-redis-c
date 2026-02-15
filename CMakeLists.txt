@@ -6,6 +6,7 @@ project(codecrafters_redis_lib)
 
 add_library(codecrafters_redis_lib
     src/lib.c
+    src/address_lookup.c
 )
 
 target_precompile_headers(

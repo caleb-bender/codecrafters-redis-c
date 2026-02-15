@@ -9,7 +9,7 @@ add_executable(
 target_precompile_headers(
     codecrafters_redis_unit_tests
     PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/test_pch.h
 )
 
 target_link_libraries(

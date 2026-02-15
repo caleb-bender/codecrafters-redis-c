@@ -9,5 +9,6 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <netdb.h>
 
 #endif //PCH_H
