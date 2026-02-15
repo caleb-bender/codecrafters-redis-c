@@ -1,15 +1,16 @@
 #include "pch.h"
 #include "address_lookup.h"
 
-#define STARTING_ADDRESS_INFOS_BY_ID_SIZE 10
-
-static struct addrinfo** address_infos_by_id[STARTING_ADDRESS_INFOS_BY_ID_SIZE];
-static int size_of_address_infos_by_id = STARTING_ADDRESS_INFOS_BY_ID_SIZE;
+static struct addrinfo** address_infos_by_id[ADDRESS_INFOS_BY_ID_CAPACITY];
+static int size_of_address_infos_by_id = ADDRESS_INFOS_BY_ID_CAPACITY;
 static int current_id = -1;
 
-int network_lib__get_first_compatible_address_info(const char* hostname, const char* port,
+int network_lib__create_compatible_address_info(const char* hostname, const char* port,
     IPVersion version, SocketType socket_type, IPAssignmentMode ip_assignment_mode, AddressInfoResultCode* code) {
-
+    if (current_id + 1 == ADDRESS_INFOS_BY_ID_CAPACITY) {
+        *code = ADDRESS_INFO_CAPACITY_EXCEEDED_PLEASE_CLEAR_STORE;
+        return -1;
+    }
     struct addrinfo hints;
     struct addrinfo* results;
     create_addrinfo_hints_from(&hints, version, socket_type, ip_assignment_mode);
@@ -22,7 +23,7 @@ int network_lib__get_first_compatible_address_info(const char* hostname, const c
     return current_id;
 }
 
-IPVersion network_lib__get_ip_version(int id, AddressInfoResultCode* code) {
+IPVersion network_lib__get_address_info_ip_version(int id, AddressInfoResultCode* code) {
     if (current_id == -1) {
         *code = ADDRESS_INFO_NOT_FOUND;
         return IP_ANY;
