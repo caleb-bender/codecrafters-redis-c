@@ -8,6 +8,7 @@ static int size_of_address_infos_by_id = ADDRESS_INFOS_BY_ID_CAPACITY;
 static int current_id = -1;
 
 uint8_t get_validation_code_using_id(uint8_t validation_code, int id, AddressInfoResultCode* code);
+void create_addrinfo_hints_from(struct addrinfo* hints, IPVersion version, SocketType socket_type, IPAssignmentMode ip_assignment_mode);
 
 int network_lib__create_compatible_address_info(const char* hostname, const char* port,
     IPVersion version, SocketType socket_type, IPAssignmentMode ip_assignment_mode, AddressInfoResultCode* code) {
@@ -22,17 +23,17 @@ int network_lib__create_compatible_address_info(const char* hostname, const char
     if (result_code != 0) {
         fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(result_code));
     }
-    address_infos_by_id[++current_id] = results;
+    address_infos_by_id[++current_id] = &results;
     if (code != NULL)
         *code = ADDRESS_INFO_OK;
     return current_id;
 }
 
 IPVersion network_lib__get_address_info_ip_version(int id, AddressInfoResultCode* code) {
-    
+
     uint8_t validation_code = get_validation_code_using_id(IP_ANY, id, code);
     if (validation_code != EXISTS_AND_IN_BOUNDS) return validation_code;
-    struct addrinfo* result = address_infos_by_id[id];
+    struct addrinfo* result = *address_infos_by_id[id];
     *code = ADDRESS_INFO_OK;
     if (result->ai_family == AF_INET)
         return IP_VERSION_4;
@@ -46,7 +47,7 @@ SocketType network_lib__get_address_info_socket_type(int id, AddressInfoResultCo
 
     uint8_t validation_code = get_validation_code_using_id(UNKNOWN_SOCKET, id, code);
     if (validation_code != EXISTS_AND_IN_BOUNDS) return validation_code;
-    struct addrinfo* result = address_infos_by_id[id];
+    struct addrinfo* result = *address_infos_by_id[id];
     *code = ADDRESS_INFO_OK;
     if (result->ai_socktype == SOCK_STREAM) return TCP_SOCKET;
     else if (result->ai_socktype == SOCK_DGRAM) return UDP_SOCKET;
@@ -71,7 +72,7 @@ void create_addrinfo_hints_from(struct addrinfo* hints, IPVersion version, Socke
 
 void network_lib__clear_address_info_store() {
     for (int i = 0; i < current_id + 1; i++) {
-        freeaddrinfo(address_infos_by_id[i]);
+        freeaddrinfo(*address_infos_by_id[i]);
     }
     current_id = -1;
 }
