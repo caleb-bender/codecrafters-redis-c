@@ -1,14 +1,18 @@
 #include "pch.h"
 #include "address_lookup.h"
 
+#define EXISTS_AND_IN_BOUNDS 255U
+
 static struct addrinfo** address_infos_by_id[ADDRESS_INFOS_BY_ID_CAPACITY];
 static int size_of_address_infos_by_id = ADDRESS_INFOS_BY_ID_CAPACITY;
 static int current_id = -1;
 
+uint8_t get_validation_code_using_id(uint8_t validation_code, int id, AddressInfoResultCode* code);
+
 int network_lib__create_compatible_address_info(const char* hostname, const char* port,
     IPVersion version, SocketType socket_type, IPAssignmentMode ip_assignment_mode, AddressInfoResultCode* code) {
     if (current_id + 1 == ADDRESS_INFOS_BY_ID_CAPACITY) {
-        *code = ADDRESS_INFO_CAPACITY_EXCEEDED_PLEASE_CLEAR_STORE;
+        *code = ADDRESS_INFO_CAPACITY_REACHED_PLEASE_CLEAR_STORE;
         return -1;
     }
     struct addrinfo hints;
@@ -19,15 +23,15 @@ int network_lib__create_compatible_address_info(const char* hostname, const char
         fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(result_code));
     }
     address_infos_by_id[++current_id] = results;
-    *code = ADDRESS_INFO_OK;
+    if (code != NULL)
+        *code = ADDRESS_INFO_OK;
     return current_id;
 }
 
 IPVersion network_lib__get_address_info_ip_version(int id, AddressInfoResultCode* code) {
-    if (current_id == -1) {
-        *code = ADDRESS_INFO_NOT_FOUND;
-        return IP_ANY;
-    }
+    
+    uint8_t validation_code = get_validation_code_using_id(IP_ANY, id, code);
+    if (validation_code != EXISTS_AND_IN_BOUNDS) return validation_code;
     struct addrinfo* result = address_infos_by_id[id];
     *code = ADDRESS_INFO_OK;
     if (result->ai_family == AF_INET)
@@ -38,6 +42,17 @@ IPVersion network_lib__get_address_info_ip_version(int id, AddressInfoResultCode
     return IP_ANY;
 }
 
+SocketType network_lib__get_address_info_socket_type(int id, AddressInfoResultCode* code) {
+
+    uint8_t validation_code = get_validation_code_using_id(UNKNOWN_SOCKET, id, code);
+    if (validation_code != EXISTS_AND_IN_BOUNDS) return validation_code;
+    struct addrinfo* result = address_infos_by_id[id];
+    *code = ADDRESS_INFO_OK;
+    if (result->ai_socktype == SOCK_STREAM) return TCP_SOCKET;
+    else if (result->ai_socktype == SOCK_DGRAM) return UDP_SOCKET;
+    return UNKNOWN_SOCKET;
+}
+
 void create_addrinfo_hints_from(struct addrinfo* hints, IPVersion version, SocketType socket_type, IPAssignmentMode ip_assignment_mode) {
     memset(hints, 0, sizeof(struct addrinfo));
     if (version == IP_VERSION_4) {
@@ -46,7 +61,12 @@ void create_addrinfo_hints_from(struct addrinfo* hints, IPVersion version, Socke
     else if (version == IP_VERSION_6) {
         hints->ai_family = AF_INET6;
     }
-    hints->ai_socktype = SOCK_STREAM; // TCP stream sockets
+    if (socket_type == TCP_SOCKET) {
+        hints->ai_socktype = SOCK_STREAM;
+    }
+    else if (socket_type == UDP_SOCKET) {
+        hints->ai_socktype = SOCK_DGRAM;
+    }
 }
 
 void network_lib__clear_address_info_store() {
@@ -54,6 +74,18 @@ void network_lib__clear_address_info_store() {
         freeaddrinfo(address_infos_by_id[i]);
     }
     current_id = -1;
+}
+
+uint8_t get_validation_code_using_id(uint8_t validation_code, int id, AddressInfoResultCode* code) {
+    if (id < 0 || id >= ADDRESS_INFOS_BY_ID_CAPACITY) {
+        *code = ADDRESS_INFO_ID_OUT_OF_RANGE;
+        return validation_code;
+    }
+    if (current_id == -1 || id > current_id) {
+        *code = ADDRESS_INFO_NOT_FOUND;
+        return validation_code;
+    }
+    return EXISTS_AND_IN_BOUNDS;
 }
 
 
