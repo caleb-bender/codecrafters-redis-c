@@ -4,7 +4,6 @@
 #define EXISTS_AND_IN_BOUNDS 255U
 
 static struct addrinfo* address_infos_by_id[ADDRESS_INFOS_BY_ID_CAPACITY];
-static int size_of_address_infos_by_id = ADDRESS_INFOS_BY_ID_CAPACITY;
 static int current_id = -1;
 
 uint8_t get_validation_code_using_id(uint8_t validation_code, int id, AddressInfoResultCode* code);
@@ -84,7 +83,7 @@ void create_addrinfo_hints_from(struct addrinfo* hints, IPVersion version, Socke
 }
 
 void network_lib__clear_address_info_store() {
-    for (int i = 0; i < current_id + 1; i++) {
+    for (int i = 0; i <= current_id; i++) {
         freeaddrinfo(address_infos_by_id[i]);
     }
     current_id = -1;
