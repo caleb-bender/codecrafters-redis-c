@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "address_lookup.h"
+#include "address_info.h"
 
 #define EXISTS_AND_IN_BOUNDS 255U
 
@@ -16,12 +16,23 @@ int network_lib__create_compatible_address_info(const char* hostname, const char
         *code = ADDRESS_INFO_CAPACITY_REACHED_PLEASE_CLEAR_STORE;
         return -1;
     }
+    else if (ip_assignment_mode == CUSTOM_PROVIDED_IP && hostname == NULL) {
+        *code = ADDRESS_INFO_HOSTNAME_REQUIRED;
+        return -1;
+    }
     struct addrinfo hints;
     struct addrinfo* results;
     create_addrinfo_hints_from(&hints, version, socket_type, ip_assignment_mode);
     int result_code = getaddrinfo(hostname, port, &hints, &results);
     if (result_code != 0) {
-        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(result_code));
+        switch (result_code) {
+            case -9:
+                *code = ADDRESS_INFO_INCOMPATIBLE_IP_VERSION_GIVEN_HOSTNAME;
+                return -1;
+            default:
+                *code = ADDRESS_INFO_UNKNOWN_ERROR;
+                return -1;
+        }
     }
     address_infos_by_id[++current_id] = results;
     if (code != NULL)
@@ -39,7 +50,6 @@ IPVersion network_lib__get_address_info_ip_version(int id, AddressInfoResultCode
         return IP_VERSION_4;
     else if (result->ai_family == AF_INET6)
         return IP_VERSION_6;
-        
     return IP_ANY;
 }
 
@@ -61,6 +71,9 @@ void create_addrinfo_hints_from(struct addrinfo* hints, IPVersion version, Socke
     }
     else if (version == IP_VERSION_6) {
         hints->ai_family = AF_INET6;
+    }
+    else if (version == IP_ANY) {
+        hints->ai_family = AF_UNSPEC;
     }
     if (socket_type == TCP_SOCKET) {
         hints->ai_socktype = SOCK_STREAM;
@@ -87,6 +100,13 @@ uint8_t get_validation_code_using_id(uint8_t validation_code, int id, AddressInf
         return validation_code;
     }
     return EXISTS_AND_IN_BOUNDS;
+}
+
+
+struct addrinfo* network_lib__get_bsd_address_info_results_using_id(int address_info_id, AddressInfoResultCode* code) {
+    uint8_t validation_code = get_validation_code_using_id(0, address_info_id, code);
+    if (validation_code != EXISTS_AND_IN_BOUNDS) return NULL;
+    return address_infos_by_id[address_info_id];
 }
 
 

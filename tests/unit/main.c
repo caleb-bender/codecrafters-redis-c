@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "address_lookup_tests.h"
-
+#include "address_info_tests.h"
+#include "sockets_tests.h"
 
 UTEST_MAIN();

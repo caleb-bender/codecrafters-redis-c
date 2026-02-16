@@ -1,9 +1,9 @@
-#ifndef ADDRESS_LOOKUP_TESTS_H
-#define ADDRESS_LOOKUP_TESTS_H
+#ifndef ADDRESS_INFO_TESTS_H
+#define ADDRESS_INFO_TESTS_H
 #include "test_pch.h"
-#include "address_lookup.h"
+#include "address_info.h"
 
-UTEST(AddressLookupTests, given_localhost_port_and_tcp_and_ip_version_4_when_creating_compatible_address_info_then_returned_struct_is_correct) {
+UTEST(AddressInfoTests, given_localhost_port_and_tcp_and_ip_version_4_when_creating_compatible_address_info_then_returned_struct_is_correct) {
     // Arrange
     AddressInfoResultCode code;
     // Act
@@ -15,7 +15,7 @@ UTEST(AddressLookupTests, given_localhost_port_and_tcp_and_ip_version_4_when_cre
     ASSERT_EQ(ADDRESS_INFO_OK, code);
 }
 
-UTEST(AddressLookupTests, given_ip_version_4_when_looking_up_address_info_version_then_returned_version_is_correct) {
+UTEST(AddressInfoTests, given_ip_version_4_when_looking_up_address_info_version_then_returned_version_is_correct) {
     // Arrange
     AddressInfoResultCode code;
     int address_info_id = network_lib__create_compatible_address_info(
@@ -29,7 +29,7 @@ UTEST(AddressLookupTests, given_ip_version_4_when_looking_up_address_info_versio
     network_lib__clear_address_info_store();
 }
 
-UTEST(AddressLookupTests, given_ip_version_6_when_looking_up_address_info_version_then_returned_version_is_correct) {
+UTEST(AddressInfoTests, given_ip_version_6_when_looking_up_address_info_version_then_returned_version_is_correct) {
     // Arrange
     AddressInfoResultCode code;
     int address_info_id = network_lib__create_compatible_address_info(
@@ -43,7 +43,21 @@ UTEST(AddressLookupTests, given_ip_version_6_when_looking_up_address_info_versio
     network_lib__clear_address_info_store();
 }
 
-UTEST(AddressLookupTests, given_address_info_doesnt_exist_when_looking_up_address_info_version_then_result_code_is_not_found) {
+UTEST(AddressInfoTests, given_ip_any_when_looking_up_address_info_version_then_returned_version_is_correct) {
+    // Arrange
+    AddressInfoResultCode code;
+    int address_info_id = network_lib__create_compatible_address_info(
+        NULL, "27653", IP_ANY, TCP_SOCKET, AUTO_ASSIGN_IP, NULL
+    );
+    // Act
+    IPVersion version = network_lib__get_address_info_ip_version(address_info_id, &code);
+    // Assert
+    ASSERT_EQ(IP_VERSION_6, version);
+    ASSERT_EQ(ADDRESS_INFO_OK, code);
+    network_lib__clear_address_info_store();
+}
+
+UTEST(AddressInfoTests, given_address_info_doesnt_exist_when_looking_up_address_info_version_then_result_code_is_not_found) {
     // Arrange
     AddressInfoResultCode code;
     int address_info_id = 0;
@@ -55,7 +69,7 @@ UTEST(AddressLookupTests, given_address_info_doesnt_exist_when_looking_up_addres
     network_lib__clear_address_info_store();
 }
 
-UTEST(AddressLookupTests, when_creating_too_many_address_infos_then_result_code_is_capacity_reached_please_reset) {
+UTEST(AddressInfoTests, when_creating_too_many_address_infos_then_result_code_is_capacity_reached_please_reset) {
     // Arrange
     AddressInfoResultCode code;
     for (int i = 0; i < ADDRESS_INFOS_BY_ID_CAPACITY; i++) {
@@ -72,7 +86,7 @@ UTEST(AddressLookupTests, when_creating_too_many_address_infos_then_result_code_
     network_lib__clear_address_info_store();
 }
 
-UTEST(AddressLookupTests, given_tcp_when_looking_up_address_info_socket_type_then_it_is_correct) {
+UTEST(AddressInfoTests, given_tcp_when_looking_up_address_info_socket_type_then_it_is_correct) {
     // Arrange
     AddressInfoResultCode code;
     int id = network_lib__create_compatible_address_info(
@@ -86,7 +100,7 @@ UTEST(AddressLookupTests, given_tcp_when_looking_up_address_info_socket_type_the
     network_lib__clear_address_info_store();
 }
 
-UTEST(AddressLookupTests, given_udp_when_looking_up_address_info_socket_type_then_it_is_correct) {
+UTEST(AddressInfoTests, given_udp_when_looking_up_address_info_socket_type_then_it_is_correct) {
     // Arrange
     AddressInfoResultCode code;
     int id = network_lib__create_compatible_address_info(
@@ -100,7 +114,7 @@ UTEST(AddressLookupTests, given_udp_when_looking_up_address_info_socket_type_the
     network_lib__clear_address_info_store();
 }
 
-UTEST(AddressLookupTests, given_address_info_doesnt_exist_when_looking_up_address_info_socket_type_then_code_is_not_found) {
+UTEST(AddressInfoTests, given_address_info_doesnt_exist_when_looking_up_address_info_socket_type_then_code_is_not_found) {
     // Arrange
     AddressInfoResultCode code;
     // Act
@@ -111,7 +125,7 @@ UTEST(AddressLookupTests, given_address_info_doesnt_exist_when_looking_up_addres
     network_lib__clear_address_info_store();
 }
 
-UTEST(AddressLookupTests, given_address_info_exists_but_id_out_of_range_when_looking_up_address_info_ip_version_then_out_of_range_code) {
+UTEST(AddressInfoTests, given_address_info_exists_but_id_out_of_range_when_looking_up_address_info_ip_version_then_out_of_range_code) {
     // Arrange
     AddressInfoResultCode below_lower_bound_code;
     AddressInfoResultCode above_upper_bound_code;
@@ -129,7 +143,7 @@ UTEST(AddressLookupTests, given_address_info_exists_but_id_out_of_range_when_loo
     network_lib__clear_address_info_store();
 }
 
-UTEST(AddressLookupTests, given_address_info_exists_but_id_exceeds_current_id_when_looking_up_address_info_ip_version_then_code_is_not_found) {
+UTEST(AddressInfoTests, given_address_info_exists_but_id_exceeds_current_id_when_looking_up_address_info_ip_version_then_code_is_not_found) {
     // Arrange
     AddressInfoResultCode code;
     network_lib__create_compatible_address_info(
@@ -143,7 +157,7 @@ UTEST(AddressLookupTests, given_address_info_exists_but_id_exceeds_current_id_wh
     network_lib__clear_address_info_store();
 }
 
-UTEST(AddressLookupTests, given_address_info_exists_but_id_out_of_range_when_looking_up_address_info_socket_type_then_out_of_range_code) {
+UTEST(AddressInfoTests, given_address_info_exists_but_id_out_of_range_when_looking_up_address_info_socket_type_then_out_of_range_code) {
     // Arrange
     AddressInfoResultCode below_lower_bound_code;
     AddressInfoResultCode above_upper_bound_code;
@@ -161,7 +175,7 @@ UTEST(AddressLookupTests, given_address_info_exists_but_id_out_of_range_when_loo
     network_lib__clear_address_info_store();
 }
 
-UTEST(AddressLookupTests, given_address_info_exists_but_id_exceeds_current_id_when_looking_up_socket_type_ip_version_then_code_is_not_found) {
+UTEST(AddressInfoTests, given_address_info_exists_but_id_exceeds_current_id_when_looking_up_socket_type_then_code_is_not_found) {
     // Arrange
     AddressInfoResultCode code;
     network_lib__create_compatible_address_info(
@@ -175,4 +189,31 @@ UTEST(AddressLookupTests, given_address_info_exists_but_id_exceeds_current_id_wh
     network_lib__clear_address_info_store();
 }
 
-#endif //ADDRESS_LOOKUP_TESTS_H
+
+UTEST(AddressInfoTests, when_creating_address_info_with_null_hostname_but_custom_ip_address_then_code_is_hostname_required) {
+    // Arrange
+    AddressInfoResultCode code;
+    // Act
+    int id = network_lib__create_compatible_address_info(
+        NULL, "27653", IP_VERSION_4, UDP_SOCKET, CUSTOM_PROVIDED_IP, &code
+    );
+    // Assert
+    ASSERT_EQ(-1, id);
+    ASSERT_EQ(ADDRESS_INFO_HOSTNAME_REQUIRED, code);
+    network_lib__clear_address_info_store();
+}
+
+UTEST(AddressInfoTests, when_creating_address_info_with_incompatible_ip_then_code_is_incompatible_ip_version_given_hostname) {
+    // Arrange
+    AddressInfoResultCode code;
+    // Act
+    int id = network_lib__create_compatible_address_info(
+        "127.0.0.1", "27653", IP_VERSION_6, UDP_SOCKET, CUSTOM_PROVIDED_IP, &code
+    );
+    // Assert
+    ASSERT_EQ(-1, id);
+    ASSERT_EQ(ADDRESS_INFO_INCOMPATIBLE_IP_VERSION_GIVEN_HOSTNAME, code);
+    network_lib__clear_address_info_store();
+}
+
+#endif //ADDRESS_INFO_TESTS_H

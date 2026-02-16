@@ -1,5 +1,5 @@
-#ifndef ADDRESS_LOOKUP_H
-#define ADDRESS_LOOKUP_H
+#ifndef ADDRESS_INFO_H
+#define ADDRESS_INFO_H
 #include <stdint.h>
 
 #define ADDRESS_INFOS_BY_ID_CAPACITY 100
@@ -11,21 +11,24 @@ typedef enum IPVersion : uint8_t {
 } IPVersion;
 
 typedef enum SocketType : uint8_t {
-    UNKNOWN_SOCKET = 4,
+    UNKNOWN_SOCKET = 4U,
     TCP_SOCKET,
     UDP_SOCKET
 } SocketType;
 
 typedef enum IPAssignmentMode : uint8_t {
-    CUSTOM_PROVIDED_IP = 16,
+    CUSTOM_PROVIDED_IP = 16U,
     AUTO_ASSIGN_IP
 } IPAssignmentMode;
 
 typedef enum AddressInfoResultCode : uint8_t {
-    ADDRESS_INFO_OK = 32,
+    ADDRESS_INFO_OK = 32U,
     ADDRESS_INFO_NOT_FOUND,
     ADDRESS_INFO_CAPACITY_REACHED_PLEASE_CLEAR_STORE,
-    ADDRESS_INFO_ID_OUT_OF_RANGE
+    ADDRESS_INFO_ID_OUT_OF_RANGE,
+    ADDRESS_INFO_HOSTNAME_REQUIRED,
+    ADDRESS_INFO_INCOMPATIBLE_IP_VERSION_GIVEN_HOSTNAME,
+    ADDRESS_INFO_UNKNOWN_ERROR
 } AddressInfoResultCode;
 
 int network_lib__create_compatible_address_info(const char* hostname, const char* port,
@@ -38,4 +41,4 @@ SocketType network_lib__get_address_info_socket_type(int id, AddressInfoResultCo
 
 void network_lib__clear_address_info_store();
 
-#endif //ADDRESS_LOOKUP_H
+#endif //ADDRESS_INFO_H
