@@ -33,3 +33,16 @@ void network_lib__close_all_sockets() {
     current_id = -1;
 }
 
+SocketStatusCode network_lib__socket_descriptor_status(int socket_descriptor_id) {
+    if (socket_descriptor_id < 0 || socket_descriptor_id > current_id) {
+        return SOCKET_STATUS_NOT_FOUND_OR_CLOSED;
+    }
+    return SOCKET_STATUS_EXISTS_BUT_CLOSED;
+}
+
+void network_lib__close_last_socket() {
+    if (current_id == -1) return;
+    close(socket_descriptors[current_id]);
+    current_id--;
+}
+

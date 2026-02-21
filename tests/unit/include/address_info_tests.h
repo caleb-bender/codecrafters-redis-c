@@ -216,4 +216,37 @@ UTEST(AddressInfoTests, when_creating_address_info_with_incompatible_ip_then_cod
     network_lib__clear_address_info_store();
 }
 
+UTEST(AddressInfoTests, when_creating_address_infos_and_then_popping_one_then_first_exists_but_second_doesnt) {
+    // Arrange
+    AddressInfoResultCode code;
+    int first_id = network_lib__create_compatible_address_info(
+        NULL, "27653", IP_VERSION_4, UDP_SOCKET, AUTO_ASSIGN_IP, &code
+    );
+    ASSERT_EQ(ADDRESS_INFO_OK, code);
+    int second_id = network_lib__create_compatible_address_info(
+        NULL, "27653", IP_VERSION_4, UDP_SOCKET, AUTO_ASSIGN_IP, &code
+    );
+    ASSERT_EQ(ADDRESS_INFO_OK, code);
+    // Act
+    int popped_id = network_lib__pop_address_info_store();
+    IPVersion first_version = network_lib__get_address_info_ip_version(first_id, &code);
+    ASSERT_EQ(ADDRESS_INFO_OK, code);
+    IPVersion second_version = network_lib__get_address_info_ip_version(second_id, &code);
+    // Assert
+    ASSERT_EQ(second_id, popped_id);
+    ASSERT_EQ(IP_VERSION_4, first_version);
+    ASSERT_EQ(IP_ANY, second_version);
+    ASSERT_EQ(ADDRESS_INFO_NOT_FOUND, code);
+    network_lib__clear_address_info_store();
+}
+
+UTEST(AddressInfoTests, when_popping_address_info_store_multiple_times_with_no_address_infos_then_popped_id_is_negative_one) {
+    // Act
+    int popped_id1 = network_lib__pop_address_info_store();
+    int popped_id2 = network_lib__pop_address_info_store();
+    // Assert
+    ASSERT_EQ(-1, popped_id1);
+    ASSERT_EQ(-1, popped_id2);
+}
+
 #endif //ADDRESS_INFO_TESTS_H

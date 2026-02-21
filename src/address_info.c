@@ -108,5 +108,15 @@ struct addrinfo* network_lib__get_bsd_address_info_results_using_id(int address_
     return address_infos_by_id[address_info_id];
 }
 
+int network_lib__pop_address_info_store() {
+    if (current_id == -1) return -1;
+    int popped_id = current_id;
+    uint8_t validation_code = get_validation_code_using_id(0, popped_id, NULL);
+    if (validation_code != EXISTS_AND_IN_BOUNDS) return -1;
+    freeaddrinfo(address_infos_by_id[popped_id]);
+    current_id--;
+    return popped_id;
+}
+
 
 
