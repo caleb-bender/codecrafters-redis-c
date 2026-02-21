@@ -3,40 +3,44 @@
 
 #define EXISTS_AND_IN_BOUNDS 255U
 
-static struct addrinfo* address_infos_by_id[ADDRESS_INFOS_BY_ID_CAPACITY];
-static int current_id = -1;
+static struct addrinfo* address_infos_by_id[ADDRESS_INFOS_BY_ID_CAPACITY] = {NULL};
 
 uint8_t get_validation_code_using_id(uint8_t validation_code, int id, AddressInfoResultCode* code);
 void create_addrinfo_hints_from(struct addrinfo* hints, IPVersion version, SocketType socket_type, IPAssignmentMode ip_assignment_mode);
 
 int network_lib__create_compatible_address_info(const char* hostname, const char* port,
     IPVersion version, SocketType socket_type, IPAssignmentMode ip_assignment_mode, AddressInfoResultCode* code) {
-    if (current_id + 1 == ADDRESS_INFOS_BY_ID_CAPACITY) {
-        *code = ADDRESS_INFO_CAPACITY_REACHED_PLEASE_CLEAR_STORE;
-        return -1;
-    }
-    else if (ip_assignment_mode == CUSTOM_PROVIDED_IP && hostname == NULL) {
+    if (ip_assignment_mode == CUSTOM_PROVIDED_IP && hostname == NULL) {
         *code = ADDRESS_INFO_HOSTNAME_REQUIRED;
         return -1;
     }
-    struct addrinfo hints;
-    struct addrinfo* results;
-    create_addrinfo_hints_from(&hints, version, socket_type, ip_assignment_mode);
-    int result_code = getaddrinfo(hostname, port, &hints, &results);
-    if (result_code != 0) {
-        switch (result_code) {
-            case -9:
-                *code = ADDRESS_INFO_INCOMPATIBLE_IP_VERSION_GIVEN_HOSTNAME;
-                return -1;
-            default:
-                *code = ADDRESS_INFO_UNKNOWN_ERROR;
-                return -1;
+    int current_id = 0;
+    while (current_id < ADDRESS_INFOS_BY_ID_CAPACITY) {
+        if (address_infos_by_id[current_id] != NULL) {
+            current_id++;
+            continue;
         }
+        struct addrinfo hints;
+        struct addrinfo* results;
+        create_addrinfo_hints_from(&hints, version, socket_type, ip_assignment_mode);
+        int result_code = getaddrinfo(hostname, port, &hints, &results);
+        if (result_code != 0) {
+            switch (result_code) {
+                case -9:
+                    *code = ADDRESS_INFO_INCOMPATIBLE_IP_VERSION_GIVEN_HOSTNAME;
+                    return -1;
+                default:
+                    *code = ADDRESS_INFO_UNKNOWN_ERROR;
+                    return -1;
+            }
+        }
+        address_infos_by_id[current_id] = results;
+        if (code != NULL)
+            *code = ADDRESS_INFO_OK;
+        return current_id;
     }
-    address_infos_by_id[++current_id] = results;
-    if (code != NULL)
-        *code = ADDRESS_INFO_OK;
-    return current_id;
+    *code = ADDRESS_INFO_CAPACITY_REACHED_PLEASE_CLEAR_STORE;
+    return -1;
 }
 
 IPVersion network_lib__get_address_info_ip_version(int id, AddressInfoResultCode* code) {
@@ -83,19 +87,20 @@ void create_addrinfo_hints_from(struct addrinfo* hints, IPVersion version, Socke
 }
 
 void network_lib__clear_address_info_store() {
-    for (int i = 0; i <= current_id; i++) {
-        freeaddrinfo(address_infos_by_id[i]);
+    for (int i = 0; i <= ADDRESS_INFOS_BY_ID_CAPACITY; i++) {
+        network_lib__delete_address_info(i);
     }
-    current_id = -1;
 }
 
 uint8_t get_validation_code_using_id(uint8_t validation_code, int id, AddressInfoResultCode* code) {
     if (id < 0 || id >= ADDRESS_INFOS_BY_ID_CAPACITY) {
-        *code = ADDRESS_INFO_ID_OUT_OF_RANGE;
+        if (code != NULL)
+            *code = ADDRESS_INFO_ID_OUT_OF_RANGE;
         return validation_code;
     }
-    if (current_id == -1 || id > current_id) {
-        *code = ADDRESS_INFO_NOT_FOUND;
+    if (address_infos_by_id[id] == NULL) {
+        if (code != NULL)
+            *code = ADDRESS_INFO_NOT_FOUND;
         return validation_code;
     }
     return EXISTS_AND_IN_BOUNDS;
@@ -108,14 +113,10 @@ struct addrinfo* network_lib__get_bsd_address_info_results_using_id(int address_
     return address_infos_by_id[address_info_id];
 }
 
-int network_lib__pop_address_info_store() {
-    if (current_id == -1) return -1;
-    int popped_id = current_id;
-    uint8_t validation_code = get_validation_code_using_id(0, popped_id, NULL);
-    if (validation_code != EXISTS_AND_IN_BOUNDS) return -1;
-    freeaddrinfo(address_infos_by_id[popped_id]);
-    current_id--;
-    return popped_id;
+void network_lib__delete_address_info(int address_info_id) {
+    if (address_info_id < 0 || address_info_id >= ADDRESS_INFOS_BY_ID_CAPACITY) return;
+    freeaddrinfo(address_infos_by_id[address_info_id]);
+    address_infos_by_id[address_info_id] = NULL;
 }
 
 

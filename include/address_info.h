@@ -41,6 +41,6 @@ SocketType network_lib__get_address_info_socket_type(int id, AddressInfoResultCo
 
 void network_lib__clear_address_info_store();
 
-int network_lib__pop_address_info_store();
+void network_lib__delete_address_info(int address_info_id);
 
 #endif //ADDRESS_INFO_H
